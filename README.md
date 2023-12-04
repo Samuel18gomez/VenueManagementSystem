@@ -62,7 +62,7 @@ This project follows a comprehensive systems analysis and design methodology, en
 ## Code Structure
 The project is implemented using HTML, CSS, and JavaScript. The core functionalities are divided into multiple HTML pages, each serving a specific purpose:
 
-### Login Page:
+### Login Page
 - Provides an interface for user authentication.
 - Utilizes Firebase for user authentication and real-time data storage.
 
@@ -70,7 +70,7 @@ The project is implemented using HTML, CSS, and JavaScript. The core functionali
 - Serves as the main dashboard after login.
 - Displays navigation links and a hero section introducing the Venue Reservation Manager.
 
-### Customers, Venues, & Reservation Management Page
+### Customers, Venues, & Reservation Management Pages
 - Manages the master list for each entity.
 - Allows users to add, edit, delete, and export customer information.
 - Implements Firebase Firestore for real-time data updates.
