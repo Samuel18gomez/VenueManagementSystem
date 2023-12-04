@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<!---Coding By CodingLab | www.codinglabweb.com--->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="shortcut icon" type="x-icon" href="images/logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Reservation Management</title>
+    <!--<title>Registration Form in HTML CSS</title>-->
+    <!---Custom CSS File--->
+    <link rel="stylesheet" href="css/stylereservations.css" />
+  </head>
+  <body>
+    <header class="header">
+        <nav class="navbar">
+          <h2 class="logo"><a href="homepage.html">Venue Reservation Manager</a></h2>
+          </label>
+          <ul class="links">
+            <li><a href="customers.html">Customers</a></li>
+            <li><a href="venues.html">Venues</a></li>
+            <li><a href="cancelledreservations.html">Cancelled Reservations</a></li>
+            <li><a href="reservationstable.html">Reservations</a></li>
+          </ul>
+          <div class="buttons">
+            <a href="reservations.html" class="signup">Make a Reservation</a>
+          </div>
+        </nav>
+    </header>
+    <section class="container">
+      <header>Reservation Form</header>
+      <form action="#" class="form" autocomplete="off">
+        <div class="column">
+            <div class="input-box">
+                <label>First Name</label>
+                <input type="text" placeholder="Enter first name" required name="firstName"/>
+            </div>
+            <div class="input-box">
+                <label>Last Name</label>
+                <input type="text" placeholder="Enter last name" required name="lastName"/>
+            </div>
+        </div>
+        <div class="column">
+            <div class="input-box">
+                <label>Email Address</label>
+                <input type="email" placeholder="Enter email address" required name="email"/>
+            </div>
+            <div class="input-box">
+                <label>Company Name</label>
+                <input type="text" placeholder="Enter company name" required name="companyName"/>
+            </div>
+        </div>
+        <div class="column">
+          <div class="input-box">
+            <label>Phone Number</label>
+            <input type="text" placeholder="Enter phone number" required name="phoneNumber"/>
+          </div>
+          <div class="input-box">
+            <label>Reservation Date</label>
+            <input type="date" placeholder="Enter reservation date" required name="reservationDate"/>
+          </div>
+        </div>
+        <div class="column">
+            <div class="input-box address">
+                <label>Venue</label>
+                <div class="select-box">
+                    <select id="venueSelect">
+                        <option hidden>Select the Venue</option>
+                    </select>
+                </div>
+            </div>
+            <div class="selectFile">
+                <input type="file" id="fileInput">
+            </div>
+        </div>
+        <button>Submit</button>
+      </form>
+    </section>
+    <script type="module">
+        //firebase
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            getDocs,
+            doc,
+            onSnapshot,
+            query,
+            addDoc,
+            deleteDoc,
+            updateDoc,
+            where,
+            getCountFromServer
+        } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+
+        import {
+            getStorage,
+            ref,
+            uploadBytes
+        } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-storage.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBShfqupve9C2fLazURIPBk9ae136t-iqU",
+            authDomain: "cnit-280-project.firebaseapp.com",
+            projectId: "cnit-280-project",
+            storageBucket: "cnit-280-project.appspot.com",
+            messagingSenderId: "605542709533",
+            appId: "1:605542709533:web:ec05ce2c8766a14c5609f4"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const venueSelect = document.getElementById('venueSelect');
+
+        // Create a Firestore query for the 'VENUE' collection
+        const venueQuery = query(collection(db, 'VENUE'));
+
+        // Create an array to store venue names
+        var venues = [];
+
+        // Function to update the select-box options with venue names
+        function updateSelectOptions() {
+            // Clear existing options
+            venueSelect.innerHTML = '';
+
+            // Create the default hidden option
+            const defaultOption = document.createElement('option');
+            defaultOption.value = ''; // Set the value if needed
+            defaultOption.text = 'Select the Venue';
+            venueSelect.appendChild(defaultOption);
+
+            // Create options for each venue name
+            venues.forEach((venueName) => {
+                const option = document.createElement('option');
+                option.value = venueName; // Set the value if needed
+                option.text = venueName;
+                venueSelect.appendChild(option);
+            });
+        }
+
+        // Fetch initial data and set up the listener
+        const unsubscribe = onSnapshot(venueQuery, (snapshot) => {
+            venues = []; // Clear the existing venues array
+
+            snapshot.forEach((doc) => {
+                const roomName = doc.data().Room_Name;
+                venues.push(roomName);
+            });
+
+            // Update the select-box options
+            updateSelectOptions();
+        });
+
+        const reservationForms = document.querySelectorAll('.form');
+            // Get a reference to the file input element
+        const fileInput = document.getElementById('fileInput');
+
+        // Event listener for file input change
+        fileInput.addEventListener('change', (e) => {
+            const selectedFile = e.target.files[0];
+            if (selectedFile) {
+                // You can handle the file here, for example, upload it to Firebase Storage
+                const storage = getStorage(app);
+                const storageRef = ref(storage, `CONTRACT/${selectedFile.name}`);
+                uploadBytes(storageRef, selectedFile);
+                // Upload the file to Firebase Storage
+                // You can add error handling and progress tracking as needed
+                // See Firebase Storage documentation for more details.
+            }
+        });
+
+        reservationForms.forEach((reservationForm) => {
+            reservationForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const firstName = reservationForm.querySelector('input[name="firstName"]').value;
+                const lastName = reservationForm.querySelector('input[name="lastName"]').value;
+                const phoneNumber = reservationForm.querySelector('input[name="phoneNumber"]').value;
+                const email = reservationForm.querySelector('input[name="email"]').value;
+                const companyName = reservationForm.querySelector('input[name="companyName"]').value;
+                const reservationDate = reservationForm.querySelector('input[name="reservationDate"]').value;
+                const selectedVenue = venueSelect.value;
+
+                // Check if there's already a reservation for the selected date and venue
+                const existingReservationQuery = query(
+                    collection(db, 'RESERVATION'),
+                    where('Reservation_Date', '==', reservationDate),
+                    where('Room_Name', '==', selectedVenue)
+                );
+                const existingCustomerQuery = query(
+                    collection(db, 'CUSTOMER'),
+                    where('First_Name','==',firstName),
+                    where('Last_Name','==',lastName),
+                    where('Email','==',email),
+                    where('Phone_Number','==',phoneNumber),
+                    
+                )
+
+                try {
+                    var check = [];
+                    var check2 = [];
+                    const existingReservation = await getDocs(existingReservationQuery);
+                    existingReservation.forEach((doc) => {
+                        const roomName = doc.data().Room_Name;
+                        check.push(roomName);
+                    });
+                    const existingCustomer = await getDocs(existingCustomerQuery);
+                    existingCustomer.forEach((doc) => {
+                        const firstName = doc.data().First_Name;
+                        check2.push(firstName);
+                    })
+                    if (check.length=== 0 && check2.length === 0 ) {
+                        // If no existing reservation, add the new reservation
+                        const docRef = addDoc(collection(db, 'RESERVATION'), {
+                            First_Name: firstName,
+                            Last_Name: lastName,
+                            Phone_Number: phoneNumber,
+                            Email: email,
+                            Company_Name: companyName,
+                            Reservation_Date: reservationDate,
+                            Room_Name: selectedVenue
+                        });
+                        const docRef2 = addDoc(collection(db, 'CUSTOMER'), {
+                            First_Name: firstName,
+                            Last_Name: lastName,
+                            Phone_Number: phoneNumber,
+                            Email: email,
+                            Company_Name: companyName,
+                        });
+                        reservationForm.reset();
+
+                        // Display an alert for a successful reservation
+                        alert('Reservation has been successfully made! And new customer has been added to the list');
+                        
+                    } else if (check.length === 0 && check2.length !== 0){
+                        const docRef = addDoc(collection(db, 'RESERVATION'), {
+                            First_Name: firstName,
+                            Last_Name: lastName,
+                            Phone_Number: phoneNumber,
+                            Email: email,
+                            Company_Name: companyName,
+                            Reservation_Date: reservationDate,
+                            Room_Name: selectedVenue
+                        });
+                        reservationForm.reset();
+                        alert('Reservation has been successfully made!');
+                        // If there are existing reservations, show an alert to the user
+                    } else if (check.length !== 0 && check2.length === 0){
+                        const docRef2 = addDoc(collection(db, 'CUSTOMER'), {
+                            First_Name: firstName,
+                            Last_Name: lastName,
+                            Phone_Number: phoneNumber,
+                            Email: email,
+                            Company_Name: companyName,
+                        });
+                        reservationForm.reset();
+                        alert('A reservation for the selected date and venue already exists. But the new customer is going to be added to the list.');
+                    } else{
+                        alert('A reservation for the selected date and venue already exists.');
+                        reservationForm.reset();
+                    }
+                } catch (error) {
+                    console.error('Error checking or adding reservation:', error);
+                }
+            });
+        });
+
+
+
+    </script>
+  </body>
+</html>

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="x-icon" href="images/logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venue Management</title>
+    <link rel="stylesheet" href="css/stylevenues.css" />
+    <script src="table2excel.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+          <h2 class="logo"><a href="homepage.html">Venue Reservation Manager</a></h2>
+          </label>
+          <ul class="links">
+            <li><a href="customers.html">Customers</a></li>
+            <li><a href="venues.html">Venues</a></li>
+            <li><a href="cancelledreservations.html">Cancelled Reservations</a></li>
+            <li><a href="reservationstable.html">Reservations</a></li>
+          </ul>
+          <div class="buttons">
+            <a href="reservations.html" class="signup">Make a Reservations</a>
+          </div>
+        </nav>
+    </header>
+    <section class="hero-section">
+        <div class="hero">
+            <header>
+                <h3>Venues Master List</h3>
+            </header>
+            <div class="table-wrapper">
+                <div class="search-bar">
+                    <button class="addButton">Add Venue</button>
+                    <input type="text" class="searchInput" name="query" placeholder="Search a Record">
+                    <select class="combo-box-field" name="field">
+                      <option disabled selected>Field</option>
+                      <option value="1">Capacity</option>
+                      <option value="2">Room Name</option>
+                      <option value="3">Room Length</option>
+                      <option value="4">Room Width</option>
+                      <option value="5">Rental Fee</option>
+                    </select>
+                    <button class="filterButton">Filter</button>
+                    
+                </div>
+                <table class="table-venues" id="table-venues">
+                    <thead>
+                        <th>Room Name</th>
+                        <th>Capacity</th>
+                        <th>Room Length</th>
+                        <th>Room Width</th>
+                        <th>Rental Fee</th>
+                        <th>Action</th>
+                    </thead>
+                    <tbody id="tbody1">
+                    </tbody>
+                </table>
+                <button id="exportButton">Export to Excel</button>
+            </div>
+            <div class="modal-wrapper" style="display: none">
+                <div class="modal">
+                    <div class="modal-header"><h3>Add New Venue</h3></div>
+                    <div class="modal-body">
+                        <form class="modal-form" autocomplete="off">
+                            <input type="text" name="roomName" placeholder="Room Name">
+                            <input type="text" name="capacity" placeholder="Capacity">
+                            <input type="text" name="roomLength" placeholder="Room Length">
+                            <input type="text" name="roomWidth" placeholder="Room Width">
+                            <input type="text" name="rentalFee" placeholder="Rental Fee">
+                            <button class="newVenueButton">Submit</button>
+                        </form>
+                    </div>
+                </div>
+          </div>
+          <div class="edit-modal modal-wrapper">
+            <div class="modal">
+              <div class="modal-header"><h3>Edit Venue</h3></div>
+              <div class="modal-body">
+                <form class="edit-form" autocomplete="off">
+                    <input type="text" name="roomName" placeholder="Room Name">
+                    <input type="text" name="capacity" placeholder="Capacity">
+                    <input type="text" name="roomLength" placeholder="Room Length">
+                    <input type="text" name="roomWidth" placeholder="Room Widht">
+                    <input type="text" name="rentalFee" placeholder="Rental Fee">
+                    <button class="editVenueButton">Submit</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <script type="module">
+        const addModal = document.querySelector('.modal-wrapper');
+        const addButton = document.querySelector('.addButton');
+        const addModalForm = document.querySelector('.modal .modal-form');
+        const editModal = document.querySelector('.edit-modal');
+        const editModalForm = document.querySelector('.edit-form');
+        const searchInput = document.querySelector('.searchInput');
+        const category = document.querySelector('.combo-box-field');
+        const filterButton = document.querySelector('.filterButton');
+        var tbody = document.getElementById('tbody1');
+
+        
+        addButton.addEventListener('click', () => {
+            addModal.style.display = 'block';
+
+        });
+
+        window.addEventListener('click', e => {
+            if(e.target === addModal) {
+                addModal.style.display = 'none';
+            }
+        });
+
+        window.addEventListener('click', e => {
+            if(e.target === editModal) {
+                editModal.style.display = 'none';
+            }
+        });
+
+        //firebase
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs,
+            doc,
+            onSnapshot,
+            query,
+            addDoc,
+            deleteDoc,
+            updateDoc
+        } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBShfqupve9C2fLazURIPBk9ae136t-iqU",
+            authDomain: "cnit-280-project.firebaseapp.com",
+            projectId: "cnit-280-project",
+            storageBucket: "cnit-280-project.appspot.com",
+            messagingSenderId: "605542709533",
+            appId: "1:605542709533:web:ec05ce2c8766a14c5609f4"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        //<----------------------Populating Table --------------------------->
+        function populateTable(venues) {
+            // Get the table body element
+            tbody.innerHTML = ''; // Clear the table body before repopulating
+
+            // Iterate through the customers array
+            for (var i = 0; i < venues.length; i++) {
+                var venue = venues[i];
+        
+                // Create a new table row
+                var row = document.createElement('tr');
+                row.className = venue.id;
+
+                // Create table cells for each property (First Name, Last Name, etc.)
+                var roomNameCell = document.createElement('td');
+                roomNameCell.className = 'Room_Name';
+                roomNameCell.textContent = venue.Room_Name;
+
+                var capacityCell = document.createElement('td');
+                capacityCell.className = 'Capacity';
+                capacityCell.textContent = venue.Capacity;
+
+                var roomLengthCell = document.createElement('td');
+                roomLengthCell.className = 'Room_Length';
+                roomLengthCell.textContent = venue.Room_Length;
+
+                var roomWidthCell = document.createElement('td');
+                roomWidthCell.className = 'Room_Width';
+                roomWidthCell.textContent = venue.Room_Width;
+
+                var rentalFeeCell = document.createElement('td');
+                rentalFeeCell.className = 'Rental_Fee';
+                rentalFeeCell.textContent = venue.Rental_Fee;
+
+                var actionCell = document.createElement('td');
+                var editButton = document.createElement('button');
+                editButton.className = 'editButton';
+                editButton.textContent = 'Edit';
+
+                var deleteButton = document.createElement('button');
+                deleteButton.className = 'deleteButton';
+                deleteButton.textContent = 'Delete';
+
+                // Append the buttons to the action cell
+                actionCell.appendChild(editButton);
+                actionCell.appendChild(deleteButton);
+
+                // Append all cells to the row
+                row.appendChild(roomNameCell);
+                row.appendChild(capacityCell);
+                row.appendChild(roomLengthCell);
+                row.appendChild(roomWidthCell);
+                row.appendChild(rentalFeeCell);
+                row.appendChild(actionCell);
+
+                // Append the row to the table body
+                tbody.appendChild(row);  
+            }
+            //<---------------DELETE FUNCTION WITH BUTTON----------------------->
+            tbody.addEventListener('click', (event) => {
+                if (event.target.className === 'deleteButton') {
+                    // Find the closest row containing the delete button
+                    const row = event.target.closest('tr');
+                    const customerId = row.className;
+                    
+                    deleteDoc(doc(db, 'VENUE',`${customerId}`));   
+                }
+            });
+
+            //<--------UPDATING CUSTOMER INF0------------------>
+            let venueId;
+
+            // Inside the "Edit" button click event
+            tbody.addEventListener('click', (event) => {
+                if (event.target.className === 'editButton') {
+                    // Find the closest row containing the edit button
+                    const row = event.target.closest('tr');
+                    venueId = row.className; // Assign the value to venueId
+                    const Room_Name = row.querySelector('td:first-child').textContent;
+                    const Capacity = row.querySelector('td:nth-child(2)').textContent;
+                    const Room_Length = row.querySelector('td:nth-child(3)').textContent;
+                    const Room_Width = row.querySelector('td:nth-child(4)').textContent;
+                    const Rental_Fee = row.querySelector('td:nth-child(5)').textContent;
+
+                    // Populate the modal input fields with row data
+                    editModalForm.roomName.value = Room_Name;
+                    editModalForm.capacity.value = Capacity;
+                    editModalForm.roomLength.value = Room_Length;
+                    editModalForm.roomWidth.value = Room_Width;
+                    editModalForm.rentalFee.value = Rental_Fee;
+
+                    // Show the edit modal
+                    editModal.style.display = 'block';
+                }
+            });
+
+            // Add event listener for edit form submit outside of the click event
+            editModalForm.addEventListener('submit', e => {
+                e.preventDefault();
+                updateDoc(doc(db, "VENUE", `${venueId}`), {
+                    Room_Name: editModalForm.roomName.value,
+                    Capacity: editModalForm.capacity.value,
+                    Room_Length: editModalForm.roomLength.value,
+                    Room_Width: editModalForm.roomWidth.value,
+                    Rental_Fee: editModalForm.rentalFee.value
+                });
+                editModal.style.display = 'none';
+            });
+            
+        }
+        
+        function updateTableOnSnapshot(querySnapshot) {
+            var venues = [];
+
+            querySnapshot.forEach((doc) => {
+                venues.push({ id: doc.id, ...doc.data() });
+            });
+
+            populateTable(venues);
+        }
+
+        // Declare the 'query' variable
+        const customerQuery = query(collection(db, 'VENUE'));
+
+        // Set up a Firestore listener
+        onSnapshot(customerQuery, (querySnapshot) => {
+            updateTableOnSnapshot(querySnapshot);
+        });
+
+        //<-------------------Adding New Customer------------------------->
+        addModalForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const docRef = addDoc(collection(db, "VENUE"),{
+                Room_Name: addModalForm.roomName.value,
+                Capacity: addModalForm.capacity.value,
+                Room_Length: addModalForm.roomLength.value,
+                Room_Width: addModalForm.roomWidth.value,
+                Rental_Fee: addModalForm.rentalFee.value
+            });
+            addModal.style.display = 'none';
+            addModalForm.reset();
+        })
+
+        //<-------------FILTERING DATA----------------->
+        function SearchTable(category) {
+            var filter = searchInput.value.toUpperCase();
+            var tr = tbody.getElementsByTagName('tr');
+            var found;
+
+            for (let i = 0; i < tr.length; i++) {
+
+                var td = tr[i].getElementsByClassName(category);
+
+                for (let j = 0; j < td.length; j++) {
+                    if(td[j].innerHTML.toUpperCase().indexOf(filter) > -1 ){
+                        found=true;
+                    }
+                    
+                }
+                if(found){
+                    tr[i].style.display='';
+                    found=false;
+                }
+                else{
+                    tr[i].style.display='none';
+                }
+            }
+        }
+
+        function SearchTableByExactValue(category) {
+            var filter = searchInput.value;
+            var tr = tbody.getElementsByTagName('tr');
+            var found;
+
+            for (let i = 0; i < tr.length; i++) {
+
+                var td = tr[i].getElementsByClassName(category);
+
+                for (let j = 0; j < td.length; j++) {
+                    if(td[j].innerHTML == filter){
+                        found=true;
+                    }
+                    
+                }
+                if(found){
+                    tr[i].style.display='';
+                    found=false;
+                }
+                else{
+                    tr[i].style.display='none';
+                }
+            }
+        }
+
+        filterButton.onclick = function(){
+            if(searchInput.value==""){
+                SearchTable('Room_Name');
+            }
+
+            else if(category.value==1)
+            SearchTableByExactValue("Capacity");
+
+            else if(category.value==2)
+            SearchTable("Room_Name");
+
+            else if(category.value==3)
+            SearchTableByExactValue("Room_Length");
+
+            else if(category.value==4)
+            SearchTableByExactValue("Room_Width");
+
+            else if(category.value==5)
+            SearchTableByExactValue("Rental_Fee");
+        }
+
+        searchInput.onkeypress = function(event){
+            if(event.keyCode==13){
+                filterButton.click();
+            }
+        }
+
+        document.getElementById('exportButton').addEventListener('click', function() {
+            var table2excel = new Table2Excel();
+            table2excel.export(document.getElementById('table-venues'), 'venues_report')
+        });
+
+      </script>
+      
+
+</body>
+</html>

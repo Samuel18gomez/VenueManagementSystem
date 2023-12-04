@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="x-icon" href="images/logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Management</title>
+    <link rel="stylesheet" href="css/stylecustomers.css" />
+    <script src="table2excel.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+          <h2 class="logo"><a href="homepage.html">Venue Reservation Manager</a></h2>
+          </label>
+          <ul class="links">
+            <li><a href="customers.html">Customers</a></li>
+            <li><a href="venues.html">Venues</a></li>
+            <li><a href="cancelledreservations.html">Cancelled Reservations</a></li>
+            <li><a href="reservationstable.html">Reservations</a></li>
+          </ul>
+          <div class="buttons">
+            <a href="reservations.html" class="signup">Make a Reservations</a>
+          </div>
+        </nav>
+    </header>
+    <section class="hero-section">
+        <div class="hero">
+            <header>
+                <h3>Customers Master List</h3>
+            </header>
+            <div class="table-wrapper">
+                <div class="search-bar">
+                    <button class="addButton">Add Customer</button>
+                    <input type="text" class="searchInput" name="query" placeholder="Search a Record">
+                    <select class="combo-box-field" name="field">
+                      <option disabled selected>Field</option>
+                      <option value="1">First Name</option>
+                      <option value="2">Last Name</option>
+                      <option value="3">Phone Number</option>
+                      <option value="4">Email</option>
+                      <option value="5">Company Name</option>
+                    </select>
+                    <button class="filterButton">Filter</button>
+                </div>
+                <table class="table-users" id="table-users">
+                    <thead>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Phone Number</th>
+                        <th>Email</th>
+                        <th>Company Name</th>
+                        <th>Action</th>
+                    </thead>
+                    <tbody id="tbody1">
+                    </tbody>
+                </table>
+                <button id="exportButton">Export to Excel</button>
+            </div>
+            <div class="modal-wrapper" style="display: none">
+                <div class="modal">
+                    <div class="modal-header"><h3>Add New Customer</h3></div>
+                    <div class="modal-body">
+                        <form class="modal-form" autocomplete="off">
+                            <input type="text" name="firstName" placeholder="First Name">
+                            <input type="text" name="lastName" placeholder="Last Name">
+                            <input type="text" name="phoneNumber" placeholder="Phone Number">
+                            <input type="email" name="email" placeholder="Email">
+                            <input type="text" name="companyName" placeholder="Company Name">
+                            <button class="newCustomerButton">Submit</button>
+                        </form>
+                    </div>
+                </div>
+          </div>
+          <div class="edit-modal modal-wrapper">
+            <div class="modal">
+              <div class="modal-header"><h3>Edit Customer</h3></div>
+              <div class="modal-body">
+                <form class="edit-form" autocomplete="off">
+                    <input type="text" name="firstName" placeholder="First Name">
+                    <input type="text" name="lastName" placeholder="Last Name">
+                    <input type="text" name="phoneNumber" placeholder="Phone Number">
+                    <input type="email" name="email" placeholder="Email">
+                    <input type="text" name="companyName" placeholder="Company Name">
+                    <button class="editCustomerButton">Submit</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <script type="module">
+        const addModal = document.querySelector('.modal-wrapper');
+        const addButton = document.querySelector('.addButton');
+        const addModalForm = document.querySelector('.modal .modal-form');
+        const editModal = document.querySelector('.edit-modal');
+        const editModalForm = document.querySelector('.edit-form');
+        const searchInput = document.querySelector('.searchInput');
+        const category = document.querySelector('.combo-box-field');
+        const filterButton = document.querySelector('.filterButton');
+        var tbody = document.getElementById('tbody1');
+
+        
+        addButton.addEventListener('click', () => {
+            addModal.style.display = 'block';
+
+        });
+
+        window.addEventListener('click', e => {
+            if(e.target === addModal) {
+                addModal.style.display = 'none';
+            }
+        });
+
+        window.addEventListener('click', e => {
+            if(e.target === editModal) {
+                editModal.style.display = 'none';
+            }
+        });
+
+        //firebase
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs,
+            doc,
+            onSnapshot,
+            query,
+            addDoc,
+            deleteDoc,
+            updateDoc
+        } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBShfqupve9C2fLazURIPBk9ae136t-iqU",
+            authDomain: "cnit-280-project.firebaseapp.com",
+            projectId: "cnit-280-project",
+            storageBucket: "cnit-280-project.appspot.com",
+            messagingSenderId: "605542709533",
+            appId: "1:605542709533:web:ec05ce2c8766a14c5609f4"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        //<----------------------Populating Table --------------------------->
+        function populateTable(customers) {
+            // Get the table body element
+            tbody.innerHTML = ''; // Clear the table body before repopulating
+
+            // Iterate through the customers array
+            for (var i = 0; i < customers.length; i++) {
+                var customer = customers[i];
+        
+                // Create a new table row
+                var row = document.createElement('tr');
+                row.className = customer.id;
+
+                // Create table cells for each property (First Name, Last Name, etc.)
+                var firstNameCell = document.createElement('td');
+                firstNameCell.className = 'First_Name';
+                firstNameCell.textContent = customer.First_Name;
+
+                var lastNameCell = document.createElement('td');
+                lastNameCell.className = 'Last_Name';
+                lastNameCell.textContent = customer.Last_Name;
+
+                var phoneNumberCell = document.createElement('td');
+                phoneNumberCell.className = 'Phone_Number';
+                phoneNumberCell.textContent = customer.Phone_Number;
+
+                var emailCell = document.createElement('td');
+                emailCell.className = 'Email';
+                emailCell.textContent = customer.Email;
+
+                var companyNameCell = document.createElement('td');
+                companyNameCell.className = 'Company_Name';
+                companyNameCell.textContent = customer.Company_Name;
+
+                var actionCell = document.createElement('td');
+                var editButton = document.createElement('button');
+                editButton.className = 'editButton';
+                editButton.textContent = 'Edit';
+
+                var deleteButton = document.createElement('button');
+                deleteButton.className = 'deleteButton';
+                deleteButton.textContent = 'Delete';
+
+                // Append the buttons to the action cell
+                actionCell.appendChild(editButton);
+                actionCell.appendChild(deleteButton);
+
+                // Append all cells to the row
+                row.appendChild(firstNameCell);
+                row.appendChild(lastNameCell);
+                row.appendChild(phoneNumberCell);
+                row.appendChild(emailCell);
+                row.appendChild(companyNameCell);
+                row.appendChild(actionCell);
+
+                // Append the row to the table body
+                tbody.appendChild(row);  
+            }
+            //<---------------DELETE FUNCTION WITH BUTTON----------------------->
+            tbody.addEventListener('click', (event) => {
+                if (event.target.className === 'deleteButton') {
+                    // Find the closest row containing the delete button
+                    const row = event.target.closest('tr');
+                    const customerId = row.className;
+                    
+                    deleteDoc(doc(db, 'CUSTOMER',`${customerId}`));   
+                }
+            });
+
+            //<--------UPDATING CUSTOMER INF0------------------>
+            let customerId;
+
+            // Inside the "Edit" button click event
+            tbody.addEventListener('click', (event) => {
+                if (event.target.className === 'editButton') {
+                    // Find the closest row containing the edit button
+                    const row = event.target.closest('tr');
+                    customerId = row.className; // Assign the value to customerId
+                    const First_Name = row.querySelector('td:first-child').textContent;
+                    const Last_Name = row.querySelector('td:nth-child(2)').textContent;
+                    const Phone_Number = row.querySelector('td:nth-child(3)').textContent;
+                    const Email = row.querySelector('td:nth-child(4)').textContent;
+                    const Company_Name = row.querySelector('td:nth-child(5)').textContent;
+
+                    // Populate the modal input fields with row data
+                    editModalForm.firstName.value = First_Name;
+                    editModalForm.lastName.value = Last_Name;
+                    editModalForm.phoneNumber.value = Phone_Number;
+                    editModalForm.email.value = Email;
+                    editModalForm.companyName.value = Company_Name;
+
+                    // Show the edit modal
+                    editModal.style.display = 'block';
+                }
+            });
+
+            // Add event listener for edit form submit outside of the click event
+            editModalForm.addEventListener('submit', e => {
+                e.preventDefault();
+                updateDoc(doc(db, "CUSTOMER", `${customerId}`), {
+                    First_Name: editModalForm.firstName.value,
+                    Last_Name: editModalForm.lastName.value,
+                    Phone_Number: editModalForm.phoneNumber.value,
+                    Email: editModalForm.email.value,
+                    Company_Name: editModalForm.companyName.value
+                });
+                editModal.style.display = 'none';
+            });
+            
+        }
+        
+        function updateTableOnSnapshot(querySnapshot) {
+            var customers = [];
+
+            querySnapshot.forEach((doc) => {
+                customers.push({ id: doc.id, ...doc.data() });
+            });
+
+            populateTable(customers);
+        }
+
+        // Declare the 'query' variable
+        const customerQuery = query(collection(db, 'CUSTOMER'));
+
+        // Set up a Firestore listener
+        onSnapshot(customerQuery, (querySnapshot) => {
+            updateTableOnSnapshot(querySnapshot);
+        });
+
+        //<-------------------Adding New Customer------------------------->
+        addModalForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const docRef = addDoc(collection(db, "CUSTOMER"),{
+                First_Name: addModalForm.firstName.value,
+                Last_Name: addModalForm.lastName.value,
+                Phone_Number: addModalForm.phoneNumber.value,
+                Email: addModalForm.email.value,
+                Company_Name: addModalForm.companyName.value
+            });
+            addModal.style.display = 'none';
+            addModalForm.reset();
+        })
+
+        //<-------------FILTERING DATA----------------->
+        function SearchTable(category) {
+            var filter = searchInput.value.toUpperCase();
+            var tr = tbody.getElementsByTagName('tr');
+            var found;
+
+            for (let i = 0; i < tr.length; i++) {
+
+                var td = tr[i].getElementsByClassName(category);
+
+                for (let j = 0; j < td.length; j++) {
+                    if(td[j].innerHTML.toUpperCase().indexOf(filter) > -1 ){
+                        found=true;
+                    }
+                    
+                }
+                if(found){
+                    tr[i].style.display='';
+                    found=false;
+                }
+                else{
+                    tr[i].style.display='none';
+                }
+            }
+        }
+
+        function SearchTableByExactValue(category) {
+            var filter = searchInput.value;
+            var tr = tbody.getElementsByTagName('tr');
+            var found;
+
+            for (let i = 0; i < tr.length; i++) {
+
+                var td = tr[i].getElementsByClassName(category);
+
+                for (let j = 0; j < td.length; j++) {
+                    if(td[j].innerHTML == filter){
+                        found=true;
+                    }
+                    
+                }
+                if(found){
+                    tr[i].style.display='';
+                    found=false;
+                }
+                else{
+                    tr[i].style.display='none';
+                }
+            }
+        }
+
+        filterButton.onclick = function(){
+            if(searchInput.value==""){
+                SearchTable('First_Name');
+            }
+
+            else if(category.value==1)
+            SearchTable("First_Name");
+
+            else if(category.value==2)
+            SearchTable("Last_Name");
+
+            else if(category.value==3)
+            SearchTableByExactValue("Phone_Number");
+
+            else if(category.value==4)
+            SearchTableByExactValue("Email");
+
+            else if(category.value==5)
+            SearchTable("Company_Name");
+        }
+
+        searchInput.onkeypress = function(event){
+            if(event.keyCode==13){
+                filterButton.click();
+            }
+        }
+        
+        document.getElementById('exportButton').addEventListener('click', function() {
+            var table2excel = new Table2Excel();
+            table2excel.export(document.getElementById('table-users'), 'customers_report')
+        });
+
+      </script>
+
+</body>
+</html>

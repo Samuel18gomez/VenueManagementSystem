@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="x-icon" href="images/logo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancelled Reservation Management</title>
+    <link rel="stylesheet" href="css/stylecustomers.css" />
+    <script src="table2excel.js"></script>
+</head>
+<body>
+    <header class="header">
+        <nav class="navbar">
+          <h2 class="logo"><a href="homepage.html">Venue Reservation Manager</a></h2>
+          </label>
+          <ul class="links">
+            <li><a href="customers.html">Customers</a></li>
+            <li><a href="venues.html">Venues</a></li>
+            <li><a href="cancelledreservations.html">Cancelled Reservations</a></li>
+            <li><a href="reservationstable.html">Reservations</a></li>
+          </ul>
+          <div class="buttons">
+            <a href="reservations.html" class="signup">Make a Reservations</a>
+          </div>
+        </nav>
+    </header>
+    <section class="hero-section">
+        <div class="hero">
+            <header>
+                <h3>Reservation Master List</h3>
+            </header>
+            <div class="table-wrapper">
+                <div class="search-bar">
+                    <input type="text" class="searchInput" name="query" placeholder="Search a Record">
+                    <select class="combo-box-field" name="field">
+                      <option disabled selected>Field</option>
+                      <option value="1">First Name</option>
+                      <option value="2">Last Name</option>
+                      <option value="3">Phone Number</option>
+                      <option value="4">Email</option>
+                      <option value="5">Company Name</option>
+                      <option value="6">Reservation Date</option>
+                      <option value="7">Room Name</option>
+                    </select>
+                    <button class="filterButton">Filter</button>
+                </div>
+                <table class="table-users" id="table-users">
+                    <thead>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Phone Number</th>
+                        <th>Email</th>
+                        <th>Company Name</th>
+                        <th>Reservation Date</th>
+                        <th>Room Name</th>
+                        <th>Action</th>
+                    </thead>
+                    <tbody id="tbody1">
+                    </tbody>
+                </table>
+                <button id="exportButton">Export to Excel</button>
+            </div>
+        </div>
+      </section>
+      <script type="module">
+        const addModal = document.querySelector('.modal-wrapper');
+        const addButton = document.querySelector('.addButton');
+        const addModalForm = document.querySelector('.modal .modal-form');
+        const editModal = document.querySelector('.edit-modal');
+        const editModalForm = document.querySelector('.edit-form');
+        const searchInput = document.querySelector('.searchInput');
+        const category = document.querySelector('.combo-box-field');
+        const filterButton = document.querySelector('.filterButton');
+        var tbody = document.getElementById('tbody1');
+
+        //firebase
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { 
+            getFirestore, 
+            collection, 
+            getDocs,
+            doc,
+            onSnapshot,
+            query,
+            addDoc,
+            deleteDoc,
+            updateDoc
+        } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBShfqupve9C2fLazURIPBk9ae136t-iqU",
+            authDomain: "cnit-280-project.firebaseapp.com",
+            projectId: "cnit-280-project",
+            storageBucket: "cnit-280-project.appspot.com",
+            messagingSenderId: "605542709533",
+            appId: "1:605542709533:web:ec05ce2c8766a14c5609f4"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        //<----------------------Populating Table --------------------------->
+        function populateTable(creservations) {
+            // Get the table body element
+            tbody.innerHTML = ''; // Clear the table body before repopulating
+
+            // Iterate through the customers array
+            for (var i = 0; i < creservations.length; i++) {
+                var creservation = creservations[i];
+        
+                // Create a new table row
+                var row = document.createElement('tr');
+                row.className = creservation.id;
+
+                // Create table cells for each property (First Name, Last Name, etc.)
+                var firstNameCell = document.createElement('td');
+                firstNameCell.className = 'First_Name';
+                firstNameCell.textContent = creservation.First_Name;
+
+                var lastNameCell = document.createElement('td');
+                lastNameCell.className = 'Last_Name';
+                lastNameCell.textContent = creservation.Last_Name;
+
+                var phoneNumberCell = document.createElement('td');
+                phoneNumberCell.className = 'Phone_Number';
+                phoneNumberCell.textContent = creservation.Phone_Number;
+
+                var emailCell = document.createElement('td');
+                emailCell.className = 'Email';
+                emailCell.textContent = creservation.Email;
+
+                var companyNameCell = document.createElement('td');
+                companyNameCell.className = 'Company_Name';
+                companyNameCell.textContent = creservation.Company_Name;
+
+                var reservationDateCell = document.createElement('td');
+                reservationDateCell.className = 'Reservation_Date';
+                reservationDateCell.textContent = creservation.Reservation_Date;
+
+                var roomNameCell = document.createElement('td');
+                roomNameCell.className = 'Room_Name';
+                roomNameCell.textContent = creservation.Room_Name;
+
+                var actionCell = document.createElement('td');
+
+                var deleteButton = document.createElement('button');
+                deleteButton.className = 'deleteButton';
+                deleteButton.textContent = 'Delete';
+
+                // Append the buttons to the action cel
+                actionCell.appendChild(deleteButton);
+
+                // Append all cells to the row
+                row.appendChild(firstNameCell);
+                row.appendChild(lastNameCell);
+                row.appendChild(phoneNumberCell);
+                row.appendChild(emailCell);
+                row.appendChild(companyNameCell);
+                row.appendChild(reservationDateCell);
+                row.appendChild(roomNameCell);
+                row.appendChild(actionCell);
+
+                // Append the row to the table body
+                tbody.appendChild(row);  
+            }
+            //<---------------DELETE FUNCTION WITH BUTTON----------------------->
+            tbody.addEventListener('click', (event) => {
+                if (event.target.className === 'deleteButton') {
+                    // Find the closest row containing the delete button
+                    const row = event.target.closest('tr');
+                    const creservationId = row.className;
+                    
+                    deleteDoc(doc(db, 'CANCELLED_RESERVATION',`${creservationId}`));   
+                }
+            });
+            
+        }
+        
+        function updateTableOnSnapshot(querySnapshot) {
+            var creservation = [];
+
+            querySnapshot.forEach((doc) => {
+                creservation.push({ id: doc.id, ...doc.data() });
+            });
+
+            populateTable(creservation);
+        }
+
+        // Declare the 'query' variable
+        const customerQuery = query(collection(db, 'CANCELLED_RESERVATION'));
+
+        // Set up a Firestore listener
+        onSnapshot(customerQuery, (querySnapshot) => {
+            updateTableOnSnapshot(querySnapshot);
+        });
+
+
+        //<-------------FILTERING DATA----------------->
+        function SearchTable(category) {
+            var filter = searchInput.value.toUpperCase();
+            var tr = tbody.getElementsByTagName('tr');
+            var found;
+
+            for (let i = 0; i < tr.length; i++) {
+
+                var td = tr[i].getElementsByClassName(category);
+
+                for (let j = 0; j < td.length; j++) {
+                    if(td[j].innerHTML.toUpperCase().indexOf(filter) > -1 ){
+                        found=true;
+                    }
+                    
+                }
+                if(found){
+                    tr[i].style.display='';
+                    found=false;
+                }
+                else{
+                    tr[i].style.display='none';
+                }
+            }
+        }
+
+        function SearchTableByExactValue(category) {
+            var filter = searchInput.value;
+            var tr = tbody.getElementsByTagName('tr');
+            var found;
+
+            for (let i = 0; i < tr.length; i++) {
+
+                var td = tr[i].getElementsByClassName(category);
+
+                for (let j = 0; j < td.length; j++) {
+                    if(td[j].innerHTML == filter){
+                        found=true;
+                    }
+                    
+                }
+                if(found){
+                    tr[i].style.display='';
+                    found=false;
+                }
+                else{
+                    tr[i].style.display='none';
+                }
+            }
+        }
+
+        filterButton.onclick = function(){
+            if(searchInput.value==""){
+                SearchTable('First_Name');
+            }
+
+            else if(category.value==1)
+            SearchTable("First_Name");
+
+            else if(category.value==2)
+            SearchTable("Last_Name");
+
+            else if(category.value==3)
+            SearchTableByExactValue("Phone_Number");
+
+            else if(category.value==4)
+            SearchTableByExactValue("Email");
+
+            else if(category.value==5)
+            SearchTable("Company_Name");
+            
+            else if(category.value==6)
+            SearchTableByExactValue("Reservation_Date");
+
+            else if(category.value==5)
+            SearchTable("Room_Name");
+        }
+
+        searchInput.onkeypress = function(event){
+            if(event.keyCode==13){
+                filterButton.click();
+            }
+        }
+        
+        document.getElementById('exportButton').addEventListener('click', function() {
+            var table2excel = new Table2Excel();
+            table2excel.export(document.getElementById('table-users'), 'cancelled_reservations_report')
+        });
+
+      </script>
+
+</body>
+</html>

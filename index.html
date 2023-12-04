@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!-- Coding By CodingNepal - codingnepalweb.com -->
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <link rel="shortcut icon" type="x-icon" href="images/logo.png">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title> Venue Reservation Manager </title>
+        <!-- CSS -->
+        <link rel="stylesheet" href="css/style.css">
+                
+        <!-- Boxicons CSS -->
+        <link href='https://unpkg.com/boxicons@2.1.2/css/boxicons.min.css' rel='stylesheet'>
+                        
+    </head>
+    <body>
+        <section class="container forms">
+            <div class="form login">
+                <div class="form-content">
+                    <header>Account Login</header>
+                    <form action="#">
+                        <div class="field input-field">
+                            <input class="input" id="userEmail" type="email" placeholder="Email">
+                        </div>
+                        <div class="field input-field">
+                            <input class="password" id="userPassword" type="password" placeholder="Password">
+                            <i class='bx bx-hide eye-icon'></i>
+                        </div>
+                        <div class="field button-field">
+                            <button id="loginButton" type="button">Login</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+        <!-- JavaScript -->
+        <script type="module">
+            //Import the functions you need from the SDKs you need
+                import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+                import {
+                    getAuth,
+                    createUserWithEmailAndPassword,
+                    signInWithEmailAndPassword,
+                    onAuthStateChanged,
+                    signOut,
+                } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+                //TODO: Add SDKs for Firebase products that you want to use
+                //https://firebase.google.com/docs/web/setup#available-libraries
+
+                //Your web app's Firebase configuration
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBShfqupve9C2fLazURIPBk9ae136t-iqU",
+                    authDomain: "cnit-280-project.firebaseapp.com",
+                    projectId: "cnit-280-project",
+                    storageBucket: "cnit-280-project.appspot.com",
+                    messagingSenderId: "605542709533",
+                    appId: "1:605542709533:web:ec05ce2c8766a14c5609f4"
+                };
+
+                //Initialize Firebase
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                
+                //Initializing Variables
+                const userEmail = document.getElementById("userEmail");
+                const userPassword = document.getElementById("userPassword");
+                const signInButton = document.getElementById("loginButton");
+
+                //Sign In Function with Firebase Authentication
+                const userSignIn = async() => {
+                    const signInEmail = userEmail.value;
+                    const signInPassword = userPassword.value
+                    try {
+                        const userCredential = await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
+                        const user = userCredential.user;
+                        console.log('You have signed in successfully');
+                        window.location.href = 'homepage.html';
+                    } catch (error) {
+                        const errorCode = error.code;
+                        const errorMessage = error.message;
+                        console.log(errorCode, errorMessage);
+                        alert('You do not have access to the system');
+                    }
+                };
+
+                //Event Listener for Login Button
+                signInButton.addEventListener('click', (event) => {
+                    event.preventDefault(); // Prevent default form submission
+                    userSignIn(); // Call your sign-in function
+                });
+
+                //Eye Icon for Password
+                const forms = document.querySelector(".forms"),
+                    pwShowHide = document.querySelectorAll(".eye-icon");
+
+                    pwShowHide.forEach(eyeIcon => {
+                        eyeIcon.addEventListener("click", () => {
+                            let pwFields = eyeIcon.parentElement.parentElement.querySelectorAll(".password");
+
+                            pwFields.forEach(password => {
+                                if (password.type === "password") {
+                                    password.type = "text";
+                                    eyeIcon.classList.replace("bx-hide", "bx-show");
+                                    return;
+                                }
+                                password.type = "password";
+                                eyeIcon.classList.replace("bx-show", "bx-hide");
+                            })
+
+                        })
+                    })      
+        </script>
+    </body>
+</html>
