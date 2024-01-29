@@ -65,6 +65,7 @@ The project is implemented using HTML, CSS, and JavaScript. The core functionali
 ### Login Page
 - Provides an interface for user authentication.
 - Utilizes Firebase for user authentication and real-time data storage.
+- For the login page, use the following credentials; username: test@purdue.edu and password: 
 
 ### Home Page
 - Serves as the main dashboard after login.
